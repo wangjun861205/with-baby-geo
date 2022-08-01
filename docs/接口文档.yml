@@ -9,10 +9,19 @@ paths:
     post:
       summary: 添加地点
       requestBody:
-        $ref: '#components/schemas/Location'
+        $ref: '#components/schemas/BaseLocation'
       responses:
         '200':
           description: OK
+    
+    put:
+      summary: 修改地点
+      requestBody:
+        $ref: '#components/schemas/BaseLocation'
+      responses:
+        '200':
+          description: OK
+
 
 components:
   schemas:
@@ -29,7 +38,17 @@ components:
       type: object
       allOf:
         - $ref: '#components/schemas/BaseLocation'
-        - required:
-          - id:
-              type: integer
+      properties:
+        id:
+          type: integer
+    LocationWithDistance:
+      type: object
+      allOf:
+        - $ref: '#components/schemas/Location'
+      properties:
+        distance:
+          type: number
+
+      
+    
         
