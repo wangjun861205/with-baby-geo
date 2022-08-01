@@ -1,0 +1,35 @@
+openapi: '3.0.2'
+info:
+  title: with-baby-geo
+  version: '1.0'
+servers:
+  - url: https://geo.with_baby.test/v1
+paths:
+  /locations:
+    post:
+      summary: 添加地点
+      requestBody:
+        $ref: '#components/schemas/Location'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    BaseLocation:
+      type: object
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        geo_index:
+          type: string
+    Location:
+      type: object
+      allOf:
+        - $ref: '#components/schemas/BaseLocation'
+        - required:
+          - id:
+              type: integer
+        
