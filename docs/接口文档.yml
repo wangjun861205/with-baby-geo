@@ -13,6 +13,23 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            text/plain:
+              schema: 
+                type: string
+        '400':
+          description: 非法参数
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: 内部错误
+          content:
+            text/plain:
+              schema:
+                type: string
+
     
     put:
       summary: 修改地点
@@ -21,6 +38,77 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            text/plain:
+              schema: 
+                type: string
+        '400':
+          description: 非法参数
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: 内部错误
+          content:
+            text/plain:
+              schema:
+                type: string
+
+    get:
+      summary: 附近的地点
+      parameters:
+        - in: query
+          name: latitude
+          schema:
+            type: number
+          description: 纬度
+        - in: query
+          name: longitude
+          schema:
+            type: number
+          description: 经度
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: true
+          description: 页码
+        - in: query
+          name: size
+          schema:
+            type: integer
+          required: true
+          description: 每页记录数
+      description: latitude与longitude必须成对出现
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#components/schemas/LocationWithDistance'
+                  total:
+                    type: integer
+        '400':
+          description: 非法参数
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: 内部错误
+          content:
+            text/plain:
+              schema:
+                type: string
+
 
 
 components:
@@ -48,6 +136,7 @@ components:
       properties:
         distance:
           type: number
+        
 
       
     
