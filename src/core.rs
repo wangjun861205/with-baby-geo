@@ -1,11 +1,13 @@
-use crate::error::Error;
 use crate::models::{Location, LocationCommand, LocationQuery};
+use anyhow::Error;
+use std::future::Future;
+use std::pin::Pin;
 
 pub(crate) trait Mutex {
-    fn multiple_acquire(indices: Vec<String>) -> Result<bool, Error>;
-    fn multiple_release(indices: Vec<String>) -> Result<(), Error>;
-    fn single_acquire(index: String) -> Result<bool, Error>;
-    fn single_release(index: String) -> Result<(), Error>;
+    fn multiple_acquire<'a>(&'a mut self, keys: Vec<String>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>;
+    fn multiple_release<'a>(&'a mut self, keys: Vec<String>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>;
+    fn single_acquire<'a>(&'a mut self, key: String) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>;
+    fn single_release<'a>(&'a mut self, key: String) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>;
 }
 
 pub(crate) trait Indexer {
