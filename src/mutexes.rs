@@ -1,7 +1,7 @@
 use crate::core::Mutex;
 use anyhow::Error;
 use chrono::Utc;
-use redis::{self, AsyncCommands};
+use redis::{self, AsyncCommands, ToRedisArgs};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -13,12 +13,14 @@ pub(crate) struct RedisMutex {
     timeout: usize,
 }
 
+trait RedisArg: ToRedisArgs + std::fmt::Display + Send + Sync + Clone {}
+
 impl RedisMutex {
     pub fn new(conn: redis::aio::Connection, expire: usize, timeout: usize) -> Self {
         Self { conn, expire, timeout }
     }
-    async fn acquire(&mut self, key: &str) -> Result<(), Error> {
-        let init_key = format!("is_{}_initialized", &key);
+    async fn acquire<K: RedisArg>(&mut self, key: K) -> Result<(), Error> {
+        let init_key = format!("is_{}_initialized", key);
         let init_time_key = format!("{}_initialized_at", &key);
         let init: i32 = self.conn.set_nx(&init_key, true).await?;
         // 如果设置初始化位成功， 则直接设置初始化时间戳
@@ -37,11 +39,11 @@ impl RedisMutex {
             }
         }
         // 如果没有超时或者其他task已经开始初始化时间戳，则等待其他线程释放锁
-        self.conn.brpop(&key, self.timeout).await?;
+        self.conn.brpop(key, self.timeout).await?;
         return Ok(());
     }
 
-    async fn release(&mut self, key: &str) -> Result<(), Error> {
+    async fn release<K: RedisArg>(&mut self, key: K) -> Result<(), Error> {
         let init_time_key = format!("{}_initialized_at", &key);
         let deleted: i32 = self.conn.del(&init_time_key).await?;
         // 如果成功删除初始化时间戳, 则刷新时间戳并释放锁， 否则这两项工作需要其他成功删除时间戳的task来完成
@@ -53,14 +55,14 @@ impl RedisMutex {
     }
 }
 
-impl Mutex for RedisMutex {
-    fn multiple_acquire<'a>(&'a mut self, keys: Vec<String>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+impl<'a, K: RedisArg + 'a> Mutex<'a, K> for RedisMutex {
+    fn multiple_acquire(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
         Box::pin(async move {
             let mut i = 0;
             while i < keys.len() {
-                if let Err(e) = self.acquire(&keys[i]).await {
+                if let Err(e) = self.acquire(keys[i].clone()).await {
                     for j in 0..i {
-                        self.release(&keys[j]).await?;
+                        self.release(keys[j].clone()).await?;
                     }
                     return Err(e);
                 }
@@ -70,25 +72,25 @@ impl Mutex for RedisMutex {
         })
     }
 
-    fn multiple_release<'a>(&'a mut self, keys: Vec<String>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn multiple_release(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
         Box::pin(async move {
             for key in &keys {
-                self.release(key).await?;
+                self.release(key.clone()).await?;
             }
             Ok(())
         })
     }
 
-    fn single_acquire<'a>(&'a mut self, key: String) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn single_acquire(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
         Box::pin(async move {
-            self.acquire(&key).await?;
+            self.acquire(key).await?;
             Ok(())
         })
     }
 
-    fn single_release<'a>(&'a mut self, key: String) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn single_release(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
         Box::pin(async move {
-            self.release(&key).await?;
+            self.release(key).await?;
             Ok(())
         })
     }
