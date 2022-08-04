@@ -55,8 +55,11 @@ impl RedisMutex {
     }
 }
 
-impl<'a, K: RedisArg + 'a> Mutex<'a, K> for RedisMutex {
-    fn multiple_acquire(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+impl<K: RedisArg> Mutex<K> for RedisMutex {
+    fn multiple_acquire<'a>(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
+    where
+        K: 'a,
+    {
         Box::pin(async move {
             let mut i = 0;
             while i < keys.len() {
@@ -72,7 +75,10 @@ impl<'a, K: RedisArg + 'a> Mutex<'a, K> for RedisMutex {
         })
     }
 
-    fn multiple_release(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn multiple_release<'a>(&'a mut self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
+    where
+        K: 'a,
+    {
         Box::pin(async move {
             for key in &keys {
                 self.release(key.clone()).await?;
@@ -81,14 +87,20 @@ impl<'a, K: RedisArg + 'a> Mutex<'a, K> for RedisMutex {
         })
     }
 
-    fn single_acquire(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn single_acquire<'a>(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
+    where
+        K: 'a,
+    {
         Box::pin(async move {
             self.acquire(key).await?;
             Ok(())
         })
     }
 
-    fn single_release(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>> {
+    fn single_release<'a>(&'a mut self, key: K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
+    where
+        K: 'a,
+    {
         Box::pin(async move {
             self.release(key).await?;
             Ok(())
