@@ -1,9 +1,8 @@
-use std::borrow::Borrow;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct Location<I: Serialize> {
+pub struct Location<I> {
+    pub id: String,
     pub latitude: f64,
     pub longitude: f64,
     pub geo_index: I,

@@ -2,6 +2,7 @@
 name = "with-baby-geo"
 version = "0.1.0"
 edition = "2021"
+links = "libh3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,9 +10,16 @@ edition = "2021"
 actix-web = "4.1.0"
 anyhow = "1.0.59"
 chrono = "0.4.19"
+cmake = "0.1"
+futures = "0.3.21"
 hex = "0.4.3"
 libh3-sys = "0.1.3"
 mongodb = "2.3.0"
 redis = { version = "0.21.5", features = ["tokio-comp"] }
 serde = "1.0.142"
 thiserror = "1.0.31"
+tokio = "1.20.1"
+
+
+[build-dependencies]
+cmake = "0.1"
