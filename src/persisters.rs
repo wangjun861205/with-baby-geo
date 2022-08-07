@@ -129,7 +129,7 @@ mod test {
     use super::*;
     #[tokio::test]
     async fn test_insert() {
-        let coll = mongodb::Client::with_options(ClientOptions::parse("mongodb://localhost:27107").await.unwrap())
+        let coll = mongodb::Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await.unwrap())
             .unwrap()
             .database("with_baby_geo")
             .collection("locations");
