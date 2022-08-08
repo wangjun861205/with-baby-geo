@@ -60,13 +60,17 @@ where
         Box::pin(async move {
             let condition = doc! {"$and": vec![
                 doc!{"geo_index": doc!{ "$in": indices }},
-                doc!{"$near": {
-                    "$geometry": {
-                        "type": "Point",
-                        "coordinates": vec![longitude, latitude]
-                    },
-                    "$maxDistance": distance
-                }}
+                doc!{"location":
+                        {
+                            "$near": {
+                                "$geometry": {
+                                    "type": "Point",
+                                    "coordinates": vec![longitude, latitude]
+                                },
+                                "$maxDistance": distance
+                            }
+                        }
+                    }
             ]};
             let mut res = self
                 .coll
@@ -105,13 +109,14 @@ where
                     doc! {
                         "$and": vec![
                             doc!{ "geo_index": doc!{ "$in": indices }},
-                            doc!{ "$near": doc!{
+                            doc!{ "location": {
+                                "$near": doc!{
                                 "geometry": {
                                     "type": "Point",
                                     "coordinates": vec![longitude, latitude],
                                 },
                                 "$maxDistance": distance
-                            }}
+                            }}}
                         ]
                     },
                     None,

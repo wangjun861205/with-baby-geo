@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
+use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
-use actix_web::Responder;
 use actix_web::ResponseError;
 
 #[derive(Debug)]
@@ -22,6 +22,6 @@ impl Display for Error {
 
 impl ResponseError for Error {
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
-        HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
+        HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR).set_body(BoxBody::new(format!("{}", self)))
     }
 }

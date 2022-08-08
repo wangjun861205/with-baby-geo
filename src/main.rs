@@ -22,13 +22,17 @@ impl RedisArg for i64 {}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let mutex = RedisMutex::new(redis::Client::open("").unwrap(), 60, 5);
+    let mutex = RedisMutex::new(redis::Client::open("redis://localhost").unwrap(), 60, 5);
     let indexer = H3Indexer::new(8).unwrap();
     let persister: MongoPersister = MongoPersister::new(
-        mongodb::Client::with_options(mongodb::options::ClientOptions::parse("").await.unwrap())
-            .unwrap()
-            .database("")
-            .collection(""),
+        mongodb::Client::with_options(
+            mongodb::options::ClientOptions::parse("mongodb://localhost")
+                .await
+                .unwrap(),
+        )
+        .unwrap()
+        .database("with-baby-geo")
+        .collection("locations"),
     );
     actix_web::HttpServer::new(move || {
         actix_web::App::new()

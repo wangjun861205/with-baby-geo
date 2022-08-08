@@ -11,7 +11,7 @@ pub(crate) struct AddLocation {
 }
 
 pub(crate) async fn add_location<K, I, M, P>(
-    Json(loc): Json<Location<K>>,
+    Json(loc): Json<AddLocation>,
     indexer: Data<I>,
     mutex: Data<M>,
     persister: Data<P>,
