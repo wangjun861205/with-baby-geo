@@ -1,12 +1,11 @@
 use crate::core::Persister;
 use crate::models::*;
-use futures::TryStreamExt;
+use futures::{StreamExt, TryStreamExt};
 use mongodb::{
     bson::{doc, from_document, Bson, Document},
     options::FindOptions,
 };
 use serde::Deserialize;
-use tokio;
 
 #[derive(Clone)]
 pub(crate) struct MongoPersister {
@@ -103,25 +102,26 @@ where
         I: 'a,
     {
         Box::pin(async move {
-            let count = self
+            let res = self
                 .coll
-                .count_documents(
+                .find(
                     doc! {
-                        "$and": vec![
-                            doc!{ "geo_index": doc!{ "$in": indices }},
-                            doc!{ "location": {
-                                "$near": doc!{
-                                "$geometry": {
-                                    "type": "Point",
-                                    "coordinates": vec![longitude, latitude],
-                                },
-                                "$maxDistance": distance
-                            }}}
-                        ]
+                            "$and": vec![
+                                doc!{ "geo_index": doc!{ "$in": indices }},
+                                doc!{ "location": {
+                                    "$near": doc!{
+                                    "$geometry": {
+                                        "type": "Point",
+                                        "coordinates": vec![longitude, latitude],
+                                    },
+                                    "$maxDistance": distance
+                                }}}
+                            ]
                     },
                     None,
                 )
                 .await?;
+            let count = res.count().await;
             Ok(count > 0)
         })
     }
@@ -152,12 +152,17 @@ mod test {
 
     #[tokio::test]
     async fn test_exists() {
-        let coll = mongodb::Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await.unwrap())
+        let mut client_options = ClientOptions::parse("mongodb://localhost:27017").await.unwrap();
+        client_options.app_name = Some("with-baby-geo".to_owned());
+        let coll = mongodb::Client::with_options(client_options)
             .unwrap()
             .database("with_baby_geo")
             .collection("locations");
         let p = MongoPersister::new(coll);
-        let res = p.exists(vec![613362111795429375i64], 36.65, 117.02, 0.5).await.unwrap();
+        let res = p
+            .exists(vec![613362111795429375i64], 36.65, 117.02, 100000.0)
+            .await
+            .unwrap();
         println!("{}", res);
     }
 }
