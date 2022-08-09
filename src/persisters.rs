@@ -111,7 +111,7 @@ where
                             doc!{ "geo_index": doc!{ "$in": indices }},
                             doc!{ "location": {
                                 "$near": doc!{
-                                "geometry": {
+                                "$geometry": {
                                     "type": "Point",
                                     "coordinates": vec![longitude, latitude],
                                 },
@@ -147,6 +147,17 @@ mod test {
             })
             .await
             .unwrap();
+        println!("{}", res);
+    }
+
+    #[tokio::test]
+    async fn test_exists() {
+        let coll = mongodb::Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await.unwrap())
+            .unwrap()
+            .database("with_baby_geo")
+            .collection("locations");
+        let p = MongoPersister::new(coll);
+        let res = p.exists(vec![613362111795429375i64], 36.65, 117.02, 0.5).await.unwrap();
         println!("{}", res);
     }
 }
