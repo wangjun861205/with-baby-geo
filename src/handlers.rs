@@ -63,7 +63,7 @@ where
         persister.as_ref(),
         query.latitude,
         query.longitude,
-        20.0,
+        20000.0,
         query.page,
         query.size,
     )

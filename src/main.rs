@@ -31,8 +31,7 @@ async fn main() -> std::io::Result<()> {
                 .unwrap(),
         )
         .unwrap()
-        .database("with-baby-geo")
-        .collection("locations"),
+        .database("with-baby-geo"),
     );
     actix_web::HttpServer::new(move || {
         actix_web::App::new()

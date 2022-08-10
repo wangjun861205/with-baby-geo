@@ -26,7 +26,7 @@ impl Indexer<i64> for H3Indexer {
     }
 
     fn neighbors(&self, index: i64, distance: f64) -> Vec<i64> {
-        let k = ((distance - unsafe { edgeLengthKm(self.resolution) })
+        let k = ((distance / 1000.0 - unsafe { edgeLengthKm(self.resolution) })
             / unsafe { (edgeLengthKm(self.resolution)) * 2.0 })
         .ceil() as i32;
         let mut res = vec![0u64; unsafe { maxKringSize(k) } as usize];
