@@ -19,6 +19,7 @@ use persisters::MongoPersister;
 
 impl<'a> Key<'a> for i64 {}
 impl RedisArg for i64 {}
+impl RedisArg for String {}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
