@@ -1,0 +1,8 @@
+version: "3"
+services:
+  with-baby-geo:
+    build: .
+    image: with-baby-geo:0.1
+    environment:
+      - REDIS_URIS=redis://redis1,redis://redis2,redis://redis3
+      - MONGODB_URI=mongodb://mongodb1,mongodb2,mongodb3
