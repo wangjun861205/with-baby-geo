@@ -1,6 +1,6 @@
 use crate::core::Mutex;
 use anyhow::Error;
-use redis::{self, AsyncCommands, Client, ToRedisArgs};
+use redis::{self, cluster::ClusterClient, Commands, ToRedisArgs};
 use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
@@ -61,9 +61,9 @@ redis.call("SET", KEYS[2], prev_owner);
 redis.call("SET", KEYS[3], prev_time);
 "#;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) struct RedisMutex {
-    client: Client,
+    client: ClusterClient,
     // 有效时长， 超过此时长视为已获取锁的线程超时未释放锁或者此锁在此有效时长内没有被获取
     expire: usize,
     // 获取锁的等待时长
@@ -77,7 +77,7 @@ impl RedisArg for u64 {}
 impl<T: RedisArg> RedisArg for &T {}
 
 impl RedisMutex {
-    pub fn new(client: Client, expire: usize, timeout: usize) -> Self {
+    pub fn new(client: ClusterClient, expire: usize, timeout: usize) -> Self {
         Self {
             client,
             expire,
@@ -89,7 +89,7 @@ impl RedisMutex {
         let seq_key = format!("{}_seq", key);
         let owner_key = format!("{}_obtained_by", &key);
         let time_key = format!("{}_obtained_at", &key);
-        let mut conn = self.client.get_async_connection().await?;
+        let mut conn = self.client.get_connection()?;
         // KEYS[1]: is initiated
         // KEYS[2]: seq num
         // KEYS[3]: owner
@@ -101,12 +101,11 @@ impl RedisMutex {
             .key(owner_key)
             .key(time_key)
             .arg(self.expire as i32)
-            .invoke_async(&mut conn)
-            .await?;
+            .invoke(&mut conn)?;
         if res {
             return Ok(());
         }
-        conn.brpop(key, self.timeout).await?;
+        conn.brpop(key, self.timeout)?;
         return Ok(());
     }
 
@@ -120,15 +119,14 @@ impl RedisMutex {
         let owner_key = format!("{}_obtained_by", &key);
         let time_key = format!("{}_obtained_at", &key);
         let queue_key = format!("{}_queue", key);
-        let mut conn = self.client.get_async_connection().await?;
+        let mut conn = self.client.get_connection()?;
         redis::Script::new(RELEASE_MUTEX_SCRIPT)
             .key(seq_key)
             .key(owner_key)
             .key(time_key)
             .key(queue_key)
             .arg(self.expire as i32)
-            .invoke_async(&mut conn)
-            .await?;
+            .invoke(&mut conn)?;
         return Ok(());
     }
 }
@@ -234,7 +232,7 @@ mod test {
 
     #[tokio::test]
     async fn test_acquire() {
-        let client = redis::Client::open("redis://localhost").unwrap();
+        let client = redis::cluster::ClusterClient::open(vec!["redis://localhost"]).unwrap();
         let mutex = RedisMutex::new(client, 1, 3);
         mutex.acquire("test".to_owned()).await.unwrap();
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
