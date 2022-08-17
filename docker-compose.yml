@@ -1,0 +1,16 @@
+version: "3"
+services:
+  with-baby-geo:
+    build: .
+    image: with-baby-geo:0.1
+    container_name: with-baby-geo
+    environment:
+      - REDIS_URIS=redis://redis1,redis://redis2,redis://redis3
+      - REDIS_EXPIRE=60
+      - REDIS_TIMEOUT=10
+      - MONGODB_URI=mongodb://mongodb1,mongodb2,mongodb3
+      - MONGODB_DATABASE=with-baby-geo
+      - PORT=8000
+    ports:
+      - 8000:8000
+      

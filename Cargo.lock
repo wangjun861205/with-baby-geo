@@ -405,6 +405,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "crc16"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "338089f42c427b86394a5ee60ff321da23a5c89c9d89514c829687b26359fcff"
+
+[[package]]
 name = "crc32fast"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -498,6 +504,12 @@ dependencies = [
  "crypto-common",
  "subtle",
 ]
+
+[[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "dtoa"
@@ -1198,11 +1210,13 @@ dependencies = [
  "async-trait",
  "bytes",
  "combine",
+ "crc16",
  "dtoa",
  "futures-util",
  "itoa 0.4.8",
  "percent-encoding",
  "pin-project-lite",
+ "rand",
  "sha1 0.6.1",
  "tokio",
  "tokio-util 0.6.10",
@@ -2020,6 +2034,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "cmake",
+ "dotenv",
  "futures",
  "hex",
  "libh3-sys",
