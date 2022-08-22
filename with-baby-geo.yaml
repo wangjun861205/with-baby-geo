@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: with-baby-geo-deployment
+  labels:
+    app: with-baby-geo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: with-baby-geo
+  template:
+    metadata:
+      labels:
+        app: with-baby-geo
+    spec:
+      containers:
+      - name: with-baby-geo
+        image: docker.io/library/with-baby-geo:latest
+        ports:
+        - containerPort: 8000
