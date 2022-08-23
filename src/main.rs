@@ -14,7 +14,9 @@ use actix_web::{
     web::{get, post, Data},
 };
 use anyhow::Error;
+use dotenv;
 use indexers::H3Indexer;
+use log::warn;
 use mutexes::{RedisArg, RedisMutex};
 use persisters::MongoPersister;
 use std::env;
@@ -32,14 +34,21 @@ fn init_redis_mutex() -> Result<RedisMutex, Error> {
 }
 
 async fn init_mongo_persister() -> Result<MongoPersister, Error> {
-    let uris = env::var("MONGODB_URIS")?;
-    let database = env::var("MONGODB_DATABASE")?;
+    let uris = env::var("MONGO_URIS")?;
+    let database = env::var("MONGO_DATABASE")?;
     let db = mongodb::Client::with_options(mongodb::options::ClientOptions::parse(uris).await?)?.database(&database);
     Ok(MongoPersister::new(db))
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+    if let Err(e) = dotenv::dotenv() {
+        if !e.not_found() {
+            panic!("{e}");
+        }
+        warn!("cannot load .env: {e}");
+    }
     let mutex = init_redis_mutex().expect("failed to init redis mutex");
     let indexer = H3Indexer::new(8).unwrap();
     let persister = init_mongo_persister().await.expect("failed to init mongo persister");

@@ -8,7 +8,7 @@ services:
       - REDIS_URIS=redis://redis1,redis://redis2,redis://redis3
       - REDIS_EXPIRE=60
       - REDIS_TIMEOUT=10
-      - MONGODB_URI=mongodb://mongodb1,mongodb2,mongodb3
+      - MONGODB_URIS=mongodb://mongodb1,mongodb2,mongodb3
       - MONGODB_DATABASE=with-baby-geo
       - PORT=8000
     ports:
