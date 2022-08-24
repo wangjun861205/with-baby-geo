@@ -9,7 +9,10 @@ paths:
     post:
       summary: 添加地点
       requestBody:
-        $ref: '#components/schemas/BaseLocation'
+        content:
+          application/json:
+            schema:
+              $ref: '#components/schemas/BaseLocation'
       responses:
         '200':
           description: OK
@@ -34,7 +37,10 @@ paths:
     put:
       summary: 修改地点
       requestBody:
-        $ref: '#components/schemas/BaseLocation'
+        content:
+          application/json:
+            schema:
+              $ref: '#components/schemas/BaseLocation'
       responses:
         '200':
           description: OK
