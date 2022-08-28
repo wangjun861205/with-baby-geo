@@ -57,7 +57,7 @@ async fn main() -> std::io::Result<()> {
         actix_web::App::new()
             .route(
                 "/locations",
-                post().to(add_location::<i64, H3Indexer, &RedisMutex, MongoPersister, mutexes::MyLock>),
+                post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister, mutexes::MyLock>),
             )
             .route(
                 "/locations",

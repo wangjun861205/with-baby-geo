@@ -58,7 +58,7 @@ impl RedisMutex {
             timeout,
         }
     }
-    async fn acquire<K: RedisArg>(&self, key: &K) -> Result<MyLock, Error> {
+    async fn acquire<K: RedisArg>(self, key: &K) -> Result<MyLock, Error> {
         let res = timeout(Duration::from_secs(self.timeout), async {
             loop {
                 if let Some(l) = self.client.lock(format!("{}", key).as_bytes(), self.expire) {
@@ -71,12 +71,12 @@ impl RedisMutex {
     }
 }
 
-impl<K: RedisArg + 'static> Mutex<K, MyLock> for &'static RedisMutex {
+impl<K: RedisArg + 'static> Mutex<K, MyLock> for RedisMutex {
     fn multiple_acquire(self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<Vec<MyLock>, Error>>>> {
         Box::pin(async move {
             let mut locks = Vec::new();
             for key in &keys {
-                match self.acquire(key).await {
+                match self.clone().acquire(key).await {
                     Ok(l) => locks.push(l),
                     Err(e) => {
                         error!("{e}");
@@ -86,7 +86,7 @@ impl<K: RedisArg + 'static> Mutex<K, MyLock> for &'static RedisMutex {
             }
             if locks.len() != keys.len() {
                 for l in locks {
-                    self.client.unlock(&l.to_lock(&self.client));
+                    self.client.clone().unlock(&l.to_lock(&self.client));
                 }
                 return Err(Error::msg("failed to get lock"));
             }
