@@ -1,11 +1,11 @@
 use crate::core::Mutex;
 use anyhow::Error;
 use log::error;
-use redis::{self, cluster::ClusterClient, Commands, ToRedisArgs};
+use redis::{self, ToRedisArgs};
 use redlock::{Lock, RedLock};
+use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
-use std::{fmt::Display, marker::PhantomData};
 use tokio::time::{timeout, Duration};
 
 pub struct MyLock {
@@ -116,15 +116,4 @@ impl<K: RedisArg + 'static> Mutex<K, MyLock> for RedisMutex {
             Ok(())
         })
     }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_release_script() {}
-
-    #[tokio::test]
-    async fn test_acquire() {}
 }

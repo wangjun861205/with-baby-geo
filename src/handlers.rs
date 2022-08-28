@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::core::{self, Indexer, Key, Mutex, Persister};
 use crate::error::Error;
 use crate::models::Location;
