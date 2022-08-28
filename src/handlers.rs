@@ -12,30 +12,30 @@ pub(crate) struct AddLocation {
     longitude: f64,
 }
 
-pub(crate) async fn add_location<'a, K, I, M, P, L>(
+pub(crate) async fn add_location<K, I, M, P, L>(
     Json(loc): Json<AddLocation>,
     indexer: Data<I>,
     mutex: Data<M>,
     persister: Data<P>,
 ) -> Result<Json<String>, Error>
 where
-    K: Key<'a> + 'a,
-    I: Indexer<'a, K> + 'a,
-    M: Mutex<'a, K, L> + 'a,
-    P: Persister<K> + 'a,
-    L: 'a,
+    K: Key<'static> + 'static,
+    I: Indexer<'static, K> + Clone + 'static,
+    M: Mutex<K, L> + Clone + 'static,
+    P: Persister<K> + Clone + 'static,
+    L: 'static,
 {
-    // let res = core::add_location(
-    //     mutex.as_ref(),
-    //     indexer.as_ref(),
-    //     persister.as_ref(),
-    //     loc.latitude,
-    //     loc.longitude,
-    //     0.5,
-    // )
-    // .await?;
-    // Ok(Json(res))
-    Ok(Json("Ok".into()))
+    let res = core::add_location(
+        mutex.get_ref().clone(),
+        indexer.get_ref().clone(),
+        persister.get_ref().clone(),
+        loc.latitude,
+        loc.longitude,
+        0.5,
+    )
+    .await?;
+    Ok(Json(res))
+    // Ok(Json("Ok".into()))
 }
 
 #[derive(Deserialize)]

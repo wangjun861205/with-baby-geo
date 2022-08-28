@@ -25,7 +25,7 @@ impl<'a> Key<'a> for i64 {}
 impl RedisArg for i64 {}
 impl RedisArg for String {}
 
-fn init_redis_mutex() -> Result<RedisMutex<'static>, Error> {
+fn init_redis_mutex() -> Result<RedisMutex, Error> {
     let uris = env::var("REDIS_URIS")?.split(",").map(str::to_owned).collect();
     let expire = env::var("REDIS_EXPIRE").unwrap_or("60".into()).parse::<usize>()?;
     let timeout = env::var("REDIS_TIMEOUT").unwrap_or("10".into()).parse::<u64>()?;
@@ -57,7 +57,7 @@ async fn main() -> std::io::Result<()> {
         actix_web::App::new()
             .route(
                 "/locations",
-                post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister, redlock::Lock>),
+                post().to(add_location::<i64, H3Indexer, &RedisMutex, MongoPersister, mutexes::MyLock>),
             )
             .route(
                 "/locations",
