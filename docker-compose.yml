@@ -1,34 +1,120 @@
 version: "3"
 services:
+
+# redis
   redis1:
     image: redis:latest
     container_name: redis1
+    restart: always
+    networks:
+      - with-baby-geo
     ports:
       - 6379:6379
   redis2:
     image: redis:latest
     container_name: redis2
+    restart: always
+    networks:
+      - with-baby-geo
     ports:
       - 6380:6379
   redis3:
     image: redis:latest
     container_name: redis3
+    restart: always
+    networks:
+      - with-baby-geo
     ports:
       - 6381:6379
   redis4:
     image: redis:latest
     container_name: redis4
+    restart: always
+    networks:
+      - with-baby-geo
     ports:
       - 6382:6379
   redis5:
     image: redis:latest
     container_name: redis5
+    restart: always
+    networks:
+      - with-baby-geo
     ports:
       - 6383:6379
-  
+
+
+# mongodb
   mongo1:
-    image: mongo:latest
     container_name: mongo1
+    image: mongo:latest
+    volumes:
+      - ${MONGO1_DIR}:/data/db
+      - ./mongo-replic-set-init.sh:/scripts/rs-init.sh
+    networks:
+      - with-baby-geo
     ports:
-      - 27017:27017
+      - 27021:27017
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
+  mongo2:
+    container_name: mongo2
+    image: mongo:latest
+    volumes:
+      - ${MONGO2_DIR}:/data/db
+    networks:
+      - with-baby-geo
+    ports:
+      - 27022:27017
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
+  mongo3:
+    container_name: mongo3
+    image: mongo:latest
+    volumes:
+      - ${MONGO3_DIR}:/data/db
+    networks:
+      - with-baby-geo
+    ports:
+      - 27023:27017
+    restart: always
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
+  
+  # with-baby-geo
+
+  with-baby-geo:
+    build: .
+    image: with-baby-geo:latest
+    user: root
+    networks:
+      - with-baby-geo
+    depends_on:
+      - redis1
+      - redis2
+      - redis3
+      - redis4
+      - redis5
+      - mongo1
+      - mongo2
+      - mongo3
+    environment:
+      - REDIS_URIS=redis://localhost:6379,redis://localhost:6380,redis://localhost:6381,redis://localhost:6382,redis://localhost:6383,redis://localhost:6384
+      - REDIS_EXPIRE=60
+      - REDIS_TIMEOUT=10
+      - MONGO_URIS=mongodb://localhost:27021,localhost:27022,localhost:27022/?replicaSet=dbrs
+      - MONGO_DATABASE=with-baby-geo
+      - PORT=8000
+  
+  # nginx
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - with-baby-geo
+    ports:
+      - 8000:8000
+networks:
+  with-baby-geo:
+    driver: bridge
       
