@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker-compose --env-file=./mongo.env up -d --scale with-baby-geo=3
+docker-compose --env-file=./mongo.env up -d
 
 sleep 5
 
