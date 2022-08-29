@@ -28,8 +28,8 @@ impl RedisArg for String {}
 fn init_redis_mutex() -> Result<RedisMutex, Error> {
     let uris = env::var("REDIS_URIS")?.split(",").map(str::to_owned).collect();
     let expire = env::var("REDIS_EXPIRE").unwrap_or("60".into()).parse::<usize>()?;
-    let timeout = env::var("REDIS_TIMEOUT").unwrap_or("10".into()).parse::<usize>()?;
-    let client = redis::cluster::ClusterClient::open(uris)?;
+    let timeout = env::var("REDIS_TIMEOUT").unwrap_or("10".into()).parse::<u64>()?;
+    let client = redlock::RedLock::new(uris);
     Ok(RedisMutex::new(client, expire, timeout))
 }
 
@@ -57,7 +57,7 @@ async fn main() -> std::io::Result<()> {
         actix_web::App::new()
             .route(
                 "/locations",
-                post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister>),
+                post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister, mutexes::MyLock>),
             )
             .route(
                 "/locations",

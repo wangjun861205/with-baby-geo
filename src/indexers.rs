@@ -16,7 +16,7 @@ impl H3Indexer {
     }
 }
 
-impl Indexer<i64> for H3Indexer {
+impl<'a> Indexer<'a, i64> for H3Indexer {
     fn index(&self, latitude: f64, longitude: f64) -> i64 {
         let coord = GeoCoord {
             lat: unsafe { degsToRads(latitude) },

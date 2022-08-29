@@ -1,16 +1,34 @@
 version: "3"
 services:
-  with-baby-geo:
-    build: .
-    image: with-baby-geo
-    container_name: with-baby-geo
-    environment:
-      - REDIS_URIS=redis://redis1,redis://redis2,redis://redis3
-      - REDIS_EXPIRE=60
-      - REDIS_TIMEOUT=10
-      - MONGODB_URIS=mongodb://mongodb1,mongodb2,mongodb3
-      - MONGODB_DATABASE=with-baby-geo
-      - PORT=8000
+  redis1:
+    image: redis:latest
+    container_name: redis1
     ports:
-      - 8000:8000
+      - 6379:6379
+  redis2:
+    image: redis:latest
+    container_name: redis2
+    ports:
+      - 6380:6379
+  redis3:
+    image: redis:latest
+    container_name: redis3
+    ports:
+      - 6381:6379
+  redis4:
+    image: redis:latest
+    container_name: redis4
+    ports:
+      - 6382:6379
+  redis5:
+    image: redis:latest
+    container_name: redis5
+    ports:
+      - 6383:6379
+  
+  mongo1:
+    image: mongo:latest
+    container_name: mongo1
+    ports:
+      - 27017:27017
       

@@ -10,24 +10,19 @@ pub(crate) trait Key<'a>: Serialize + Deserialize<'a> + Display + Send + Sync + 
 impl<'a> Key<'a> for String {}
 impl<'a> Key<'a> for u64 {}
 
-pub(crate) trait Mutex<K> {
-    fn multiple_acquire<'a>(&'a self, keys: &'a [K]) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
-    where
-        K: 'a;
-    fn multiple_release<'a>(&'a self, keys: &'a [K]) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
-    where
-        K: 'a;
-    fn single_acquire<'a>(&'a self, key: &'a K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
-    where
-        K: 'a;
-    fn single_release<'a>(&'a self, key: &'a K) -> Pin<Box<dyn Future<Output = Result<(), Error>> + 'a>>
-    where
-        K: 'a;
+pub(crate) trait Mutex<K, L>
+where
+    K: 'static,
+{
+    fn multiple_acquire(self, keys: Vec<K>) -> Pin<Box<dyn Future<Output = Result<Vec<L>, Error>>>>;
+    fn multiple_release(self, locks: Vec<L>) -> Pin<Box<dyn Future<Output = Result<(), Error>>>>;
+    fn single_acquire(self, key: K) -> Pin<Box<dyn Future<Output = Result<L, Error>>>>;
+    fn single_release(self, lock: L) -> Pin<Box<dyn Future<Output = Result<(), Error>>>>;
 }
 
-pub(crate) trait Indexer<I>
+pub(crate) trait Indexer<'a, I>
 where
-    I: std::fmt::Display + Send + Sync,
+    I: std::fmt::Display + Send + Sync + 'a,
 {
     fn index(&self, latitude: f64, longitude: f64) -> I;
     fn neighbors(&self, index: I, distance: f64) -> Vec<I>;
@@ -59,29 +54,30 @@ pub(crate) trait Persister<I> {
         I: 'a;
 }
 
-pub(crate) async fn add_location<'a, M, I, P, K>(
-    mutex: &M,
-    indexer: &I,
-    persister: &P,
+pub(crate) async fn add_location<'a, M, I, P, K, L>(
+    mutex: M,
+    indexer: I,
+    persister: P,
     latitude: f64,
     longitude: f64,
     distance: f64,
 ) -> Result<String, Error>
 where
-    M: Mutex<K>,
-    I: Indexer<K>,
+    M: Mutex<K, L> + Clone + 'static,
+    I: Indexer<'a, K>,
     P: Persister<K>,
-    K: Key<'a>,
+    K: Key<'static> + 'static,
+    L: 'a,
 {
     let idx = indexer.index(latitude, longitude);
     let mut neighbors = indexer.neighbors(idx.clone(), distance);
     neighbors.sort();
-    mutex.multiple_acquire(&neighbors).await?;
+    let locks = mutex.clone().multiple_acquire(neighbors.clone()).await?;
     if persister
         .exists(neighbors.clone(), latitude, longitude, distance)
         .await?
     {
-        mutex.multiple_release(&neighbors).await?;
+        mutex.clone().multiple_release(locks).await?;
         return Err(Error::msg("already exists location nearby"));
     }
     let res = persister
@@ -91,7 +87,7 @@ where
             geo_index: idx,
         })
         .await?;
-    mutex.multiple_release(&neighbors).await?;
+    mutex.multiple_release(locks).await?;
     Ok(res)
 }
 
@@ -105,9 +101,9 @@ pub(crate) async fn nearby_locations<'a, I, P, K>(
     size: i64,
 ) -> Result<(Vec<Location<K>>, u64), Error>
 where
-    I: Indexer<K>,
+    I: Indexer<'a, K>,
     P: Persister<K>,
-    K: Key<'a>,
+    K: Key<'a> + 'a,
 {
     let idx = indexer.index(latitude, longitude);
     let indices = indexer.neighbors(idx, distance);
