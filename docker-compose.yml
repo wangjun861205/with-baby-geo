@@ -47,9 +47,12 @@ services:
     volumes:
       - ${MONGO1_DIR}:/data/db
       - ./mongo-replic-set-init.sh:/scripts/rs-init.sh
+      - ./mongo-index-init.sh:/scripts/index-init.sh
     networks:
       - with-baby-geo
     restart: always
+    ports:
+      - 27021:27017
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
   mongo2:
     container_name: mongo2
@@ -57,9 +60,12 @@ services:
     image: mongo:latest
     volumes:
       - ${MONGO2_DIR}:/data/db
+      - ./mongo-index-init.sh:/scripts/index-init.sh
     networks:
       - with-baby-geo
     restart: always
+    ports:
+      - 27022:27017
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
   mongo3:
     container_name: mongo3
@@ -67,9 +73,12 @@ services:
     image: mongo:latest
     volumes:
       - ${MONGO3_DIR}:/data/db
+      - ./mongo-index-init.sh:/scripts/index-init.sh
     networks:
       - with-baby-geo
     restart: always
+    ports:
+      - 27023:27017
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
   
   # with-baby-geo

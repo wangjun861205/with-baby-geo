@@ -24,6 +24,4 @@ var config = {
 };
 rs.initiate(config, { force: true });
 rs.status();
-use with-baby-geo;
-db.locations.createIndex({location: "2dsphere"});
 EOF
