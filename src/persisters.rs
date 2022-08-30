@@ -57,7 +57,8 @@ where
                     None,
                 )
                 .await?;
-            Ok(res.inserted_id.to_string())
+
+            Ok(res.inserted_id.as_object_id().unwrap().to_hex())
         })
     }
 
