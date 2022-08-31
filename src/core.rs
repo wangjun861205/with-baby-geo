@@ -32,36 +32,15 @@ pub(crate) trait Persister<I> {
     fn insert<'a>(&'a self, loc: LocationCommand<I>) -> Pin<Box<dyn Future<Output = Result<String, Error>> + 'a>>
     where
         I: 'a;
-    fn query<'a>(
-        &'a self,
-        indices: Vec<I>,
-        latitude: f64,
-        longitude: f64,
-        distance: f64,
-        page: i64,
-        size: i64,
-    ) -> Pin<Box<dyn Future<Output = Result<(Vec<Location<I>>, u64), Error>> + 'a>>
+    fn query<'a>(&'a self, indices: Vec<I>, latitude: f64, longitude: f64, distance: f64, page: i64, size: i64) -> Pin<Box<dyn Future<Output = Result<(Vec<Location<I>>, u64), Error>> + 'a>>
     where
         I: 'a;
-    fn exists<'a>(
-        &'a self,
-        indices: Vec<I>,
-        latitude: f64,
-        longitude: f64,
-        distance: f64,
-    ) -> Pin<Box<dyn Future<Output = Result<bool, Error>> + 'a>>
+    fn exists<'a>(&'a self, indices: Vec<I>, latitude: f64, longitude: f64, distance: f64) -> Pin<Box<dyn Future<Output = Result<bool, Error>> + 'a>>
     where
         I: 'a;
 }
 
-pub(crate) async fn add_location<'a, M, I, P, K, L>(
-    mutex: M,
-    indexer: I,
-    persister: P,
-    latitude: f64,
-    longitude: f64,
-    distance: f64,
-) -> Result<String, Error>
+pub(crate) async fn add_location<'a, M, I, P, K, L>(mutex: M, indexer: I, persister: P, latitude: f64, longitude: f64, distance: f64, uid: String) -> Result<String, Error>
 where
     M: Mutex<K, L> + Clone + 'static,
     I: Indexer<'a, K>,
@@ -73,10 +52,7 @@ where
     let mut neighbors = indexer.neighbors(idx.clone(), distance);
     neighbors.sort();
     let locks = mutex.clone().multiple_acquire(neighbors.clone()).await?;
-    if persister
-        .exists(neighbors.clone(), latitude, longitude, distance)
-        .await?
-    {
+    if persister.exists(neighbors.clone(), latitude, longitude, distance).await? {
         mutex.clone().multiple_release(locks).await?;
         return Err(Error::msg("already exists location nearby"));
     }
@@ -85,21 +61,14 @@ where
             latitude: latitude,
             longitude: longitude,
             geo_index: idx,
+            uid: uid,
         })
         .await?;
     mutex.multiple_release(locks).await?;
     Ok(res)
 }
 
-pub(crate) async fn nearby_locations<'a, I, P, K>(
-    indexer: &I,
-    persister: &P,
-    latitude: f64,
-    longitude: f64,
-    distance: f64,
-    page: i64,
-    size: i64,
-) -> Result<(Vec<Location<K>>, u64), Error>
+pub(crate) async fn nearby_locations<'a, I, P, K>(indexer: &I, persister: &P, latitude: f64, longitude: f64, distance: f64, page: i64, size: i64) -> Result<(Vec<Location<K>>, u64), Error>
 where
     I: Indexer<'a, K>,
     P: Persister<K>,
@@ -107,8 +76,6 @@ where
 {
     let idx = indexer.index(latitude, longitude);
     let indices = indexer.neighbors(idx, distance);
-    let (locs, total) = persister
-        .query(indices, latitude, longitude, distance, page, size)
-        .await?;
+    let (locs, total) = persister.query(indices, latitude, longitude, distance, page, size).await?;
     Ok((locs, total))
 }

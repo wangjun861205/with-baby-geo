@@ -19,4 +19,5 @@ pub struct LocationCommand<I> {
     pub latitude: f64,
     pub longitude: f64,
     pub geo_index: I,
+    pub uid: String,
 }

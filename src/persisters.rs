@@ -21,6 +21,7 @@ pub(crate) struct LocationIntermediate<I> {
     _id: ObjectId,
     geo_index: I,
     location: GeoJSON,
+    uid: String,
 }
 
 #[derive(Clone)]
@@ -38,10 +39,7 @@ impl<I> Persister<I> for MongoPersister
 where
     for<'de> I: Into<Bson> + Deserialize<'de>,
 {
-    fn insert<'a>(
-        &'a self,
-        loc: LocationCommand<I>,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, anyhow::Error>> + 'a>>
+    fn insert<'a>(&'a self, loc: LocationCommand<I>) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, anyhow::Error>> + 'a>>
     where
         I: 'a,
     {
@@ -52,7 +50,7 @@ where
                 .insert_one(
                     doc! {
                         "geo_index": loc.geo_index.into(),
-                        "location": doc!{ "type": "Point", "coordinates": vec![loc.longitude, loc.latitude]}
+                        "location": doc!{ "type": "Point", "coordinates": vec![loc.longitude, loc.latitude], "uid": loc.uid}
                     },
                     None,
                 )
@@ -92,19 +90,9 @@ where
             let mut res: Cursor<Document> = self
                 .db
                 .collection("locations")
-                .find(
-                    condition.clone(),
-                    FindOptions::builder()
-                        .limit(size)
-                        .skip((page as u64 - 1) * size as u64)
-                        .build(),
-                )
+                .find(condition.clone(), FindOptions::builder().limit(size).skip((page as u64 - 1) * size as u64).build())
                 .await?;
-            let count = self
-                .db
-                .run_command(doc! {"count": "locations", "query": condition}, None)
-                .await?
-                .get_i32("n")?;
+            let count = self.db.run_command(doc! {"count": "locations", "query": condition}, None).await?.get_i32("n")?;
             let mut l = Vec::new();
             while let Some(v) = res.try_next().await? {
                 let loc_im: LocationIntermediate<I> = from_document(v)?;
@@ -120,13 +108,7 @@ where
         })
     }
 
-    fn exists<'a>(
-        &'a self,
-        indices: Vec<I>,
-        latitude: f64,
-        longitude: f64,
-        distance: f64,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, anyhow::Error>> + 'a>>
+    fn exists<'a>(&'a self, indices: Vec<I>, latitude: f64, longitude: f64, distance: f64) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<bool, anyhow::Error>> + 'a>>
     where
         I: 'a,
     {
@@ -173,6 +155,7 @@ mod test {
                 latitude: 36.657004,
                 longitude: 117.0242607,
                 geo_index: 613362111795429375i64,
+                uid: "1".into(),
             })
             .await
             .unwrap();
@@ -183,14 +166,9 @@ mod test {
     async fn test_exists() {
         let mut client_options = ClientOptions::parse("mongodb://localhost:27017").await.unwrap();
         client_options.app_name = Some("with-baby-geo".to_owned());
-        let db = mongodb::Client::with_options(client_options)
-            .unwrap()
-            .database("with_baby_geo");
+        let db = mongodb::Client::with_options(client_options).unwrap().database("with_baby_geo");
         let p = MongoPersister::new(db);
-        let res = p
-            .exists(vec![613362111795429375i64], 36.65, 117.02, 100000.0)
-            .await
-            .unwrap();
+        let res = p.exists(vec![613362111795429375i64], 36.65, 117.02, 100000.0).await.unwrap();
         println!("{}", res);
     }
 
@@ -198,9 +176,7 @@ mod test {
     async fn test_database_level_exists() {
         let mut client_options = ClientOptions::parse("mongodb://localhost:27017").await.unwrap();
         client_options.app_name = Some("with-baby-geo".to_owned());
-        let db = mongodb::Client::with_options(client_options)
-            .unwrap()
-            .database("with_baby_geo");
+        let db = mongodb::Client::with_options(client_options).unwrap().database("with_baby_geo");
         let res = db
             .run_command(
                 doc! {
