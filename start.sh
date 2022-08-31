@@ -6,6 +6,6 @@ sleep 5
 
 docker exec mongo1 /scripts/rs-init.sh
 
-sleep 5 
+sleep 20
 
 docker exec mongo1 /scripts/index-init.sh

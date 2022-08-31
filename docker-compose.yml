@@ -9,6 +9,8 @@ services:
     restart: always
     networks:
       - with-baby-geo
+    ports:
+      - 6380:6379
   redis2:
     image: redis:latest
     container_name: redis2
@@ -16,6 +18,8 @@ services:
     restart: always
     networks:
       - with-baby-geo
+    ports:
+      - 6381:6379
   redis3:
     image: redis:latest
     container_name: redis3
@@ -23,6 +27,8 @@ services:
     restart: always
     networks:
       - with-baby-geo
+    ports:
+      - 6382:6379
   redis4:
     image: redis:latest
     container_name: redis4
@@ -30,6 +36,8 @@ services:
     restart: always
     networks:
       - with-baby-geo
+    ports:
+      - 6383:6379
   redis5:
     image: redis:latest
     container_name: redis5
@@ -37,6 +45,8 @@ services:
     restart: always
     networks:
       - with-baby-geo
+    ports:
+      - 6384:6379
 
 
 # mongodb

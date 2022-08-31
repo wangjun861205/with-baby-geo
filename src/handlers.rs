@@ -10,12 +10,7 @@ pub(crate) struct AddLocation {
     longitude: f64,
 }
 
-pub(crate) async fn add_location<K, I, M, P, L>(
-    Json(loc): Json<AddLocation>,
-    indexer: Data<I>,
-    mutex: Data<M>,
-    persister: Data<P>,
-) -> Result<Json<String>, Error>
+pub(crate) async fn add_location<K, I, M, P, L>(Json(loc): Json<AddLocation>, indexer: Data<I>, mutex: Data<M>, persister: Data<P>) -> Result<Json<String>, Error>
 where
     K: Key<'static> + 'static,
     I: Indexer<'static, K> + Clone + 'static,
@@ -23,15 +18,7 @@ where
     P: Persister<K> + Clone + 'static,
     L: 'static,
 {
-    let res = core::add_location(
-        mutex.get_ref().clone(),
-        indexer.get_ref().clone(),
-        persister.get_ref().clone(),
-        loc.latitude,
-        loc.longitude,
-        0.5,
-    )
-    .await?;
+    let res = core::add_location(mutex.get_ref().clone(), indexer.get_ref().clone(), persister.get_ref().clone(), loc.latitude, loc.longitude, 500.0).await?;
     Ok(Json(res))
     // Ok(Json("Ok".into()))
 }
@@ -50,28 +37,12 @@ pub(crate) struct NearbyLocationsResponse<I> {
     total: u64,
 }
 
-pub(crate) async fn nearby_locations<'a, K, I, P>(
-    Query(query): Query<NearbyLocation>,
-    indexer: Data<I>,
-    persister: Data<P>,
-) -> Result<Json<NearbyLocationsResponse<K>>, Error>
+pub(crate) async fn nearby_locations<'a, K, I, P>(Query(query): Query<NearbyLocation>, indexer: Data<I>, persister: Data<P>) -> Result<Json<NearbyLocationsResponse<K>>, Error>
 where
     K: Key<'a> + 'a,
     I: Indexer<'a, K>,
     P: Persister<K>,
 {
-    let (locs, total) = core::nearby_locations(
-        indexer.as_ref(),
-        persister.as_ref(),
-        query.latitude,
-        query.longitude,
-        20000.0,
-        query.page,
-        query.size,
-    )
-    .await?;
-    Ok(Json(NearbyLocationsResponse {
-        list: locs,
-        total: total,
-    }))
+    let (locs, total) = core::nearby_locations(indexer.as_ref(), persister.as_ref(), query.latitude, query.longitude, 20000.0, query.page, query.size).await?;
+    Ok(Json(NearbyLocationsResponse { list: locs, total: total }))
 }
