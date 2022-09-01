@@ -182,6 +182,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix_header"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2092,6 +2101,7 @@ name = "with-baby-geo"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "actix_header",
  "anyhow",
  "chrono",
  "cmake",

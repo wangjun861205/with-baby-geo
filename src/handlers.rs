@@ -1,6 +1,7 @@
 use crate::core::{self, Indexer, Key, Mutex, Persister};
 use crate::error::Error;
 use crate::models::Location;
+use actix_header::ActixHeader;
 use actix_web::{
     error::ParseError,
     http::header::{Header as ParseHeader, HeaderName, HeaderValue, InvalidHeaderValue, TryIntoHeaderValue},
@@ -10,27 +11,40 @@ use actix_web::{
 use log::error;
 use serde::{Deserialize, Serialize};
 
+#[derive(ActixHeader)]
 pub struct UID(String);
 
-impl TryIntoHeaderValue for UID {
-    type Error = InvalidHeaderValue;
-    fn try_into_value(self) -> Result<HeaderValue, Self::Error> {
-        HeaderValue::from_str(&self.0)
+impl From<String> for UID {
+    fn from(s: String) -> Self {
+        Self(s)
     }
 }
 
-impl ParseHeader for UID {
-    fn name() -> HeaderName {
-        HeaderName::from_static("X-UID")
-    }
-    fn parse<M: HttpMessage>(msg: &M) -> Result<Self, ParseError> {
-        let uid = msg.headers().get(Self::name()).ok_or(ParseError::Header)?.to_str().map_err(|e| {
-            error!("{}", e);
-            ParseError::Header
-        })?;
-        Ok(UID(uid.to_owned()))
+impl From<UID> for String {
+    fn from(u: UID) -> Self {
+        u.0
     }
 }
+
+// impl TryIntoHeaderValue for UID {
+//     type Error = InvalidHeaderValue;
+//     fn try_into_value(self) -> Result<HeaderValue, Self::Error> {
+//         HeaderValue::from_str(&self.0)
+//     }
+// }
+
+// impl ParseHeader for UID {
+//     fn name() -> HeaderName {
+//         HeaderName::from_static("X-UID")
+//     }
+//     fn parse<M: HttpMessage>(msg: &M) -> Result<Self, ParseError> {
+//         let uid = msg.headers().get(Self::name()).ok_or(ParseError::Header)?.to_str().map_err(|e| {
+//             error!("{}", e);
+//             ParseError::Header
+//         })?;
+//         Ok(UID(uid.to_owned()))
+//     }
+// }
 
 #[derive(Deserialize)]
 pub(crate) struct AddLocation {
@@ -72,4 +86,32 @@ where
 {
     let (locs, total) = core::nearby_locations(indexer.as_ref(), persister.as_ref(), query.latitude, query.longitude, 20000.0, query.page, query.size).await?;
     Ok(Json(NearbyLocationsResponse { list: locs, total: total }))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use actix_header::ActixHeader;
+    use actix_web::http::header::Header;
+
+    #[derive(ActixHeader)]
+    struct MyCustomizedHeader(String);
+
+    impl From<String> for MyCustomizedHeader {
+        fn from(s: String) -> Self {
+            Self(s)
+        }
+    }
+
+    impl From<MyCustomizedHeader> for String {
+        fn from(s: MyCustomizedHeader) -> Self {
+            s.0
+        }
+    }
+
+    #[test]
+    fn test_actix_header() {
+        let name = MyCustomizedHeader::name();
+        println!("{}", name)
+    }
 }
