@@ -1,17 +1,11 @@
 use crate::core::{self, Indexer, Key, Mutex, Persister};
 use crate::error::Error;
 use crate::models::Location;
-use actix_header::ActixHeader;
-use actix_web::{
-    error::ParseError,
-    http::header::{Header as ParseHeader, HeaderName, HeaderValue, InvalidHeaderValue, TryIntoHeaderValue},
-    web::{Data, Header, Json, Query},
-    HttpMessage,
-};
-use log::error;
+use actix_header::actix_header;
+use actix_web::web::{Data, Header, Json, Query};
 use serde::{Deserialize, Serialize};
 
-#[derive(ActixHeader)]
+#[actix_header("UID")]
 pub struct UID(String);
 
 impl From<String> for UID {
@@ -25,26 +19,6 @@ impl From<UID> for String {
         u.0
     }
 }
-
-// impl TryIntoHeaderValue for UID {
-//     type Error = InvalidHeaderValue;
-//     fn try_into_value(self) -> Result<HeaderValue, Self::Error> {
-//         HeaderValue::from_str(&self.0)
-//     }
-// }
-
-// impl ParseHeader for UID {
-//     fn name() -> HeaderName {
-//         HeaderName::from_static("X-UID")
-//     }
-//     fn parse<M: HttpMessage>(msg: &M) -> Result<Self, ParseError> {
-//         let uid = msg.headers().get(Self::name()).ok_or(ParseError::Header)?.to_str().map_err(|e| {
-//             error!("{}", e);
-//             ParseError::Header
-//         })?;
-//         Ok(UID(uid.to_owned()))
-//     }
-// }
 
 #[derive(Deserialize)]
 pub(crate) struct AddLocation {
@@ -91,10 +65,9 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use actix_header::ActixHeader;
-    use actix_web::http::header::Header;
+    use actix_header::actix_header;
 
-    #[derive(ActixHeader)]
+    #[actix_header("X-CUSTOMIZED-HEADER")]
     struct MyCustomizedHeader(String);
 
     impl From<String> for MyCustomizedHeader {

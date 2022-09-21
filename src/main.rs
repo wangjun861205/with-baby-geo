@@ -6,6 +6,7 @@ mod models;
 mod mutexes;
 mod persisters;
 
+extern crate actix_header;
 use crate::core::Key;
 
 use crate::handlers::{add_location, nearby_locations};
@@ -55,14 +56,8 @@ async fn main() -> std::io::Result<()> {
     let port = env::var("PORT").unwrap_or("8000".into());
     actix_web::HttpServer::new(move || {
         actix_web::App::new()
-            .route(
-                "/locations",
-                post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister, mutexes::MyLock>),
-            )
-            .route(
-                "/locations",
-                get().to(nearby_locations::<i64, H3Indexer, MongoPersister>),
-            )
+            .route("/locations", post().to(add_location::<i64, H3Indexer, RedisMutex, MongoPersister, mutexes::MyLock>))
+            .route("/locations", get().to(nearby_locations::<i64, H3Indexer, MongoPersister>))
             .app_data(Data::new(mutex.clone()))
             .app_data(Data::new(indexer.clone()))
             .app_data(Data::new(persister.clone()))

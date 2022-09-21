@@ -183,7 +183,9 @@ dependencies = [
 
 [[package]]
 name = "actix_header"
-version = "0.1.0"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c32f98ed5dc073ff371d01d1489b4ccd982254817c124c22d084879d99a8ef15"
 dependencies = [
  "proc-macro2",
  "quote",

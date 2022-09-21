@@ -1,0 +1,1 @@
+docker build --force-rm -t with-baby-geo:v0.1 .

@@ -52,11 +52,7 @@ impl<T: RedisArg> RedisArg for &T {}
 
 impl RedisMutex {
     pub fn new(client: RedLock, expire: usize, timeout: u64) -> Self {
-        Self {
-            client,
-            expire,
-            timeout,
-        }
+        Self { client, expire, timeout }
     }
     async fn acquire<K: RedisArg>(self, key: &K) -> Result<MyLock, Error> {
         let res = timeout(Duration::from_secs(self.timeout), async {
